@@ -1,0 +1,101 @@
+Question-1 => To write a Python program prints whether the given integer is positive, negative, or zero.
+
+program input =>
+num = int(input("Enter a number: "))
+
+if num > 0:
+
+    print("The number is positive.")
+
+elif num < 0:
+
+    print("The number is negative.")
+
+else:
+
+    print("The number is zero.")
+
+program output =>
+Enter a number: 10
+The number is positive.
+
+Question-2 => To Implement a python program that checks whether a given year is a leap year or not.
+
+program input =>
+year = int(input("Enter a year: "))
+
+if (year % 4 == 0 and year % 100 != 0) or (year % 400 == 0):
+
+    print(f"{year} is a leap year.")
+
+else:
+
+    print(f"{year} is not a leap year.")
+
+program output =>
+Enter a year: 2025
+2025 is not a leap year.
+
+Question-3 => To write a Python program to print the square root of the given number.
+
+program input =>
+num = int(input("Enter the number: "))
+
+result =num**0.5
+print(result)
+
+program output =>
+Enter the number: 16
+4.0
+
+Question-4 => To write a Python program to print the GCD of the given numbers.
+
+program input =>
+x=int(input("enter the number of x:"))
+
+y=int(input("enter the number of y:"))
+
+min_value=min(x,y)
+
+i=min_value
+
+while True:
+
+    if x%i==0 and y%i==0:
+
+        print("gcd:",i)
+
+        break
+
+    i=i-1
+
+program output =>
+enter the number of x:15
+enter the number of y:20
+gcd: 5
+
+Question-5 => To write a Python program to print the LCM of the given numbers.
+
+program input =>
+x=int(input("enter the number of x:"))
+
+y=int(input("enter the number of y:"))
+
+max_value=max(x,y)
+
+i=max_value
+
+while True:
+
+    if i%x==0 and i%y==0:
+
+        print("gcd:",i)
+
+        break
+
+    i=i+1
+
+program output =>
+enter the number of x:15
+enter the number of y:20
+lcm: 60
