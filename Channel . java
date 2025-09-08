@@ -1,0 +1,55 @@
+import java.time.Duration;
+import java.time.LocalDateTime;
+
+public abstract class Channel {
+    protected final String channelId;
+    protected String name;
+    protected int rateLimitPerHour;
+    protected boolean enabled;
+    protected int sentInCurrentWindow;
+    protected LocalDateTime windowStart;
+
+    public Channel(String channelId, String name, int rateLimitPerHour) {
+        this.channelId = channelId;
+        this.name = name;
+        this.rateLimitPerHour = rateLimitPerHour;
+        this.enabled = true;
+        this.sentInCurrentWindow = 0;
+        this.windowStart = LocalDateTime.now();
+    }
+
+    public String getChannelId() { return channelId; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+    public int getRateLimitPerHour() { return rateLimitPerHour; }
+    public void setRateLimitPerHour(int limit) { this.rateLimitPerHour = limit; }
+    public boolean isEnabled() { return enabled; }
+    public void setEnabled(boolean enabled) { this.enabled = enabled; }
+
+    protected synchronized boolean canSendNow() {
+        tickWindowIfNeeded();
+        return sentInCurrentWindow < rateLimitPerHour;
+    }
+
+    protected synchronized void recordSend() {
+        tickWindowIfNeeded();
+        sentInCurrentWindow++;
+    }
+
+    private void tickWindowIfNeeded() {
+        LocalDateTime now = LocalDateTime.now();
+        if (Duration.between(windowStart, now).toHours() >= 1) {
+            sentInCurrentWindow = 0;
+            windowStart = now;
+        }
+    }
+
+    public abstract boolean validate(Post post);
+    public abstract boolean publish(Post post);
+
+    @Override
+    public String toString() {
+        return String.format("Channel[id=%s,name=%s,limit=%d,enabled=%s]",
+                channelId, name, rateLimitPerHour, enabled);
+    }
+}
