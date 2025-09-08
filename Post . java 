@@ -1,0 +1,53 @@
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class Post {
+    public enum Status { PENDING, SCHEDULED, PUBLISHED, FAILED }
+
+    private final String postId;
+    private String content;
+    private LocalDateTime scheduledTime;
+    private Channel channel;
+    private Status status;
+    private String createdByUserId;
+    private LocalDateTime createdAt;
+
+    public Post(String postId, String content, Channel channel, String createdByUserId) {
+        this.postId = postId;
+        this.content = content;
+        this.channel = channel;
+        this.createdByUserId = createdByUserId;
+        this.createdAt = LocalDateTime.now();
+        this.status = Status.PENDING;
+        this.scheduledTime = null;
+    }
+
+    public String getPostId() { return postId; }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
+    public LocalDateTime getScheduledTime() { return scheduledTime; }
+    public Channel getChannel() { return channel; }
+    public void setChannel(Channel channel) { this.channel = channel; }
+    public Status getStatus() { return status; }
+    protected void setStatus(Status status) { this.status = status; }
+    public String getCreatedByUserId() { return createdByUserId; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+
+    public void scheduleAt(LocalDateTime when) {
+        this.scheduledTime = when;
+        this.status = Status.SCHEDULED;
+    }
+
+    public void scheduleNow() {
+        this.scheduledTime = LocalDateTime.now();
+        this.status = Status.SCHEDULED;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Post[id=%s,channel=%s,status=%s,scheduled=%s,content=\"%s\"]",
+                postId, channel.getName(), status,
+                scheduledTime == null ? "(none)" : scheduledTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME),
+                content.length() > 30 ? content.substring(0, 30) + "..." : content);
+    }
+}
