@@ -1,0 +1,30 @@
+public class TwitterChannel extends Channel {
+    private boolean useShortener;
+    private int maxLength;
+
+    public TwitterChannel(String channelId, int rateLimitPerHour) {
+        super(channelId, "Twitter", rateLimitPerHour);
+        this.useShortener = true;
+        this.maxLength = 280;
+    }
+
+    @Override
+    public boolean validate(Post post) {
+        if (!isEnabled()) return false;
+        if (post.getContent().length() > maxLength) return false;
+        return true;
+    }
+
+    @Override
+    public boolean publish(Post post) {
+        if (!canSendNow()) return false;
+        try { Thread.sleep(100); } catch (InterruptedException e) {}
+        recordSend();
+        post.setStatus(Post.Status.PUBLISHED);
+        return true;
+    }
+
+    public void setUseShortener(boolean use) { this.useShortener = use; }
+    public boolean isUsingShortener() { return useShortener; }
+    public int getMaxLength() { return maxLength; }
+}
