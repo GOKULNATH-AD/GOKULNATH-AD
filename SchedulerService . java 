@@ -1,0 +1,126 @@
+import java.time.LocalDateTime;
+import java.util.*;
+
+public class SchedulerService {
+    private final Map<String, User> users = new HashMap<>();
+    private final Map<String, Channel> channels = new HashMap<>();
+    private final Map<String, Post> posts = new HashMap<>();
+
+    private int publishAttempts = 0;
+    private int publishSuccess = 0;
+
+    public SchedulerService() {}
+
+    public void addUser(User user) { users.put(user.getId(), user); }
+    public User getUser(String id) { return users.get(id); }
+    public Collection<User> listUsers() { return users.values(); }
+
+    public void addChannel(Channel ch) { channels.put(ch.getChannelId(), ch); }
+    public Channel getChannel(String id) { return channels.get(id); }
+    public Collection<Channel> listChannels() { return channels.values(); }
+
+    public Post createPost(String postId, String content, String channelId, String createdByUserId) {
+        Channel ch = channels.get(channelId);
+        if (ch == null) throw new IllegalArgumentException("Channel not found: " + channelId);
+        Post p = new Post(postId, content, ch, createdByUserId);
+        posts.put(postId, p);
+        return p;
+    }
+
+    public boolean schedule(String postId) {
+        Post p = posts.get(postId);
+        if (p == null) return false;
+        p.scheduleNow();
+        return true;
+    }
+
+    public boolean schedule(String postId, LocalDateTime when) {
+        Post p = posts.get(postId);
+        if (p == null) return false;
+        p.scheduleAt(when);
+        return true;
+    }
+
+    public List<Post> schedule(String basePostId, LocalDateTime firstTime, int intervalMinutes, int occurrences) {
+        Post original = posts.get(basePostId);
+        if (original == null) return Collections.emptyList();
+        List<Post> created = new ArrayList<>();
+        for (int i = 0; i < occurrences; i++) {
+            String newId = basePostId + "_r" + (i + 1);
+            Post clone = new Post(newId, original.getContent(), original.getChannel(), original.getCreatedByUserId());
+            clone.scheduleAt(firstTime.plusMinutes((long) intervalMinutes * i));
+            posts.put(newId, clone);
+            created.add(clone);
+        }
+        return created;
+    }
+
+    public boolean validate(Post post) {
+        return post.getChannel().validate(post);
+    }
+
+    public void runSchedulerNow() {
+        LocalDateTime now = LocalDateTime.now();
+        List<Post> due = new ArrayList<>();
+        for (Post p : posts.values()) {
+            if (p.getStatus() == Post.Status.SCHEDULED && p.getScheduledTime() != null && !p.getScheduledTime().isAfter(now)) {
+                due.add(p);
+            }
+        }
+        for (Post p : due) {
+            publishPost(p);
+        }
+    }
+
+    public boolean publishPost(Post post) {
+        publishAttempts++;
+        if (!validate(post)) {
+            post.setStatus(Post.Status.FAILED);
+            return false;
+        }
+        boolean ok = post.getChannel().publish(post);
+        if (ok) {
+            publishSuccess++;
+        } else {
+            post.setStatus(Post.Status.FAILED);
+        }
+        return ok;
+    }
+
+    public double getPublishSuccessRate() {
+        if (publishAttempts == 0) return 0.0;
+        return (100.0 * publishSuccess) / publishAttempts;
+    }
+
+    public List<Post> listByChannel(String channelId) {
+        List<Post> out = new ArrayList<>();
+        for (Post p : posts.values())
+            if (p.getChannel().getChannelId().equals(channelId)) out.add(p);
+        out.sort(Comparator.comparing(Post::getCreatedAt));
+        return out;
+    }
+
+    public List<Post> listByStatus(Post.Status status) {
+        List<Post> out = new ArrayList<>();
+        for (Post p : posts.values())
+            if (p.getStatus() == status) out.add(p);
+        out.sort(Comparator.comparing(Post::getScheduledTime, Comparator.nullsLast(Comparator.naturalOrder())));
+        return out;
+    }
+
+    public List<Post> listByDate(LocalDateTime date) {
+        List<Post> out = new ArrayList<>();
+        for (Post p : posts.values()) {
+            if (p.getScheduledTime() != null) {
+                if (p.getScheduledTime().toLocalDate().equals(date.toLocalDate())) out.add(p);
+            }
+        }
+        return out;
+    }
+
+    public void printSummary() {
+        System.out.println("=== Scheduler Summary ===");
+        System.out.println("Users: " + users.size() + ", Channels: " + channels.size() + ", Posts: " + posts.size());
+        System.out.printf("Publish attempts=%d, successes=%d, successRate=%.2f%%%n", publishAttempts, publishSuccess, getPublishSuccessRate());
+    }
+}
